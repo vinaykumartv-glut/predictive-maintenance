@@ -5,7 +5,7 @@ import joblib
 
 # Download and load the model
 model_path = hf_hub_download(
-    repo_id="vinaykumartv/tourism-project-model",
+    repo_id="vinaykumartv/predictive-maintenance",
     filename="best_tourism_project_model.joblib"
 )
 model = joblib.load(model_path)
