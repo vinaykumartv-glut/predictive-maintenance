@@ -28,4 +28,4 @@ for file_path in glob.glob("predictive_maintenance/data/*"):
         commit_message = f"Upload {filename}"
     )
 
-print(f"✅ All files uploaded successfully to {repo_id} at {file_path} {filename}")
+print(f"✅ All files uploaded successfully to {repo_id} at {filename}")

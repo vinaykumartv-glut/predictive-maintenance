@@ -23,9 +23,7 @@ with st.expander("📊 Engine Sensor Readings", expanded=True):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        # Note: 'Engine rpm' was excluded from the final training data based on previous steps.
-        # Only include features the model was trained on.
-        # Engine_RPM = st.number_input("Engine RPM (Revolutions per Minute)", min_value=0, value=700, step=10)
+        Engine_RPM = st.number_input("Engine RPM (Revolutions per Minute)", min_value=0, value=700, step=10)
         Lub_Oil_Pressure = st.number_input("Lub Oil Pressure (bar/kPa)", min_value=0.0, value=3.0, step=0.1, format="%.2f")
 
     with col2:
@@ -40,6 +38,7 @@ with st.expander("📊 Engine Sensor Readings", expanded=True):
 classification_threshold = 0.45
 if st.button("🔮 Predict Engine Condition"):
     input_data = pd.DataFrame([{
+        'Engine rpm': Engine_RPM,
         'Lub oil pressure': Lub_Oil_Pressure,
         'Fuel pressure': Fuel_Pressure,
         'Coolant pressure': Coolant_Pressure,
