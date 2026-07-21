@@ -4,7 +4,7 @@ import os
 api = HfApi(token=os.getenv("HF_TOKEN"))
 api.upload_folder(
     folder_path = "deployment",     # the local folder containing files
-    repo_id = "vinaykumartv/tourism-project-data",          # the target repo
+    repo_id = "vinaykumartv/predictive-maintenance",          # the target repo
     repo_type = "space",                      # dataset, model, or space
     path_in_repo = "",                          # optional: subfolder path inside the repo
 )
