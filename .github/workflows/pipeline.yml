@@ -96,9 +96,20 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install Dependencies
         run: pip install -r requirements.txt
+
+      - name: Start MLflow server
+        run: |
+          nohup mlflow server \
+            --backend-store-uri sqlite:///mlflow.db \
+            --default-artifact-root ./mlruns \
+            --host 0.0.0.0 \
+            --port 5000 &
+          sleep 5
+
       - name: Model Building
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          MLFLOW_TRACKING_URI: http://localhost:5000
         run: python model_building/train.py || true
 
   deploy-hosting:
