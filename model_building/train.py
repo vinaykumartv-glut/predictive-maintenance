@@ -1,4 +1,3 @@
-#predictive_maintenance/model_building/prep.py
 # for data manipulation
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
@@ -38,12 +37,12 @@ ytest_path = "hf://datasets/vinaykumartv/predictive-maintenance/ytest.csv"
 # Load the preprocessed data into pandas DataFrames
 Xtrain = pd.read_csv(Xtrain_path)
 Xtest = pd.read_csv(Xtest_path)
-ytrain = pd.read_csv(ytrain_path)
-ytest = pd.read_csv(ytest_path)
+ytrain = pd.read_csv(ytrain_path).squeeze()
+ytest = pd.read_csv(ytest_path).squeeze()
 
-# Identify numerical and categorical columns from the training data
-numerical_columns = Xtrain.select_dtypes(exclude = "object").columns.tolist()
-categorical_columns = Xtrain.select_dtypes(include = "category").columns.tolist()
+# Ensure both float and int numeric columns are included
+numerical_columns = Xtrain.select_dtypes(include=["float64","int64"]).columns.tolist()
+categorical_columns = Xtrain.select_dtypes(include="category").columns.tolist()
 
 # Calculate class weight to handle class imbalance
 # This gives more weight to the minority class during training
@@ -72,6 +71,15 @@ param_grid = {
 
 # Create a pipeline that first preprocesses the data then applies the XGBoost model
 model_pipeline = make_pipeline(preprocessor, xgb_model)
+
+# Validation check
+expected = [
+    "Engine rpm","Lub oil pressure","Fuel pressure",
+    "Coolant pressure","lub oil temp","Coolant temp"
+]
+missing = [col for col in expected if col not in Xtrain.columns]
+if missing:
+    raise ValueError(f"Missing features before upload: {missing}")
 
 # Start an MLflow run to track the entire training process
 with mlflow.start_run():

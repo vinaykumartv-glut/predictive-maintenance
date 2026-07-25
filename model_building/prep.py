@@ -16,25 +16,33 @@ api = HfApi(token = access_key)
 
 DATASET_PATH = "hf://datasets/vinaykumartv/predictive-maintenance/enginedata.csv"
 
-data = pd.read_csv(DATASET_PATH, index_col = 0)
+data = pd.read_csv(DATASET_PATH)
 
 print("Dataset loaded successfully.")
 
 # Define the target variable for the classification task
 target = "Engine Condition"
 
-numerical_columns = data.select_dtypes(exclude = "object").columns.tolist()
+# Ensure both float and int numeric columns are included
+numerical_columns = data.select_dtypes(include=["float64","int64"]).columns.tolist()
+categorical_columns = data.select_dtypes(include="category").columns.tolist()
 
-# List of categorical features in the dataset
-categorical_columns = data.select_dtypes(include = "category").columns.tolist()
+# Define predictors and target
+target = "Engine Condition"
+X = data[numerical_columns + categorical_columns].drop(columns=[target])
+y = data[target]
 
-# Define predictor matrix (X) using selected numeric and categorical features
-X = data[numerical_columns + categorical_columns]
+# Validation check
+expected = [
+    "Engine rpm","Lub oil pressure","Fuel pressure",
+    "Coolant pressure","lub oil temp","Coolant temp"
+]
+missing = [col for col in expected if col not in X.columns]
+if missing:
+    raise ValueError(f"Missing features before upload: {missing}")
 
 # Define target variable
 y = data[target]
-
-X.drop([target], axis = 1, inplace = True)
 
 # Split dataset into train and test
 # Split the dataset into training and test sets
