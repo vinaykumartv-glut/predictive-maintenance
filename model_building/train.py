@@ -5,8 +5,8 @@ from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
 # for model training, tuning, and evaluation
 import xgboost as xgb
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, recall_score
+from sklearn.model_selection import RandomizedSearchCV # Changed from GridSearchCV
+from sklearn.metrics import accuracy_score, classification_report, recall_score, make_scorer
 # for model serialization
 import joblib
 # for creating a folder
@@ -58,15 +58,15 @@ preprocessor = make_column_transformer(
 # Define the base XGBoost Classifier model
 xgb_model = xgb.XGBClassifier(scale_pos_weight = class_weight, random_state = 42)
 
-# Define the hyperparameter grid for GridSearchCV
+# Define the hyperparameter grid for RandomizedSearchCV
 # These parameters will be tuned to find the best model configuration
 param_grid = {
-    'xgbclassifier__n_estimators': [50, 75, 100, 125, 150],    # number of trees to build
-    'xgbclassifier__max_depth': [2, 3, 4],    # maximum depth of each tree
-    'xgbclassifier__colsample_bytree': [0.4, 0.5, 0.6],    # percentage of attributes for each tree
-    'xgbclassifier__colsample_bylevel': [0.4, 0.5, 0.6],    # percentage of attributes for each level of a tree
-    'xgbclassifier__learning_rate': [0.01, 0.05, 0.1],    # learning rate
-    'xgbclassifier__reg_lambda': [0.4, 0.5, 0.6],    # L2 regularization factor
+    'xgbclassifier__n_estimators': [50, 75, 100, 125, 150, 200, 250],    # Increased range
+    'xgbclassifier__max_depth': [2, 3, 4, 5, 6],    # Increased range
+    'xgbclassifier__colsample_bytree': [0.4, 0.5, 0.6, 0.7, 0.8],    # Increased range
+    'xgbclassifier__colsample_bylevel': [0.4, 0.5, 0.6, 0.7, 0.8],    # Increased range
+    'xgbclassifier__learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2],    # Increased range
+    'xgbclassifier__reg_lambda': [0.4, 0.5, 0.6, 0.7, 0.8],    # Increased range
 }
 
 # Create a pipeline that first preprocesses the data then applies the XGBoost model
@@ -81,14 +81,18 @@ missing = [col for col in expected if col not in Xtrain.columns]
 if missing:
     raise ValueError(f"Missing features before upload: {missing}")
 
+# Define custom scorer for f1-score of the positive class
+f1_scorer = make_scorer(recall_score, pos_label=1)
+
 # Start an MLflow run to track the entire training process
 with mlflow.start_run():
-    # Perform hyperparameter tuning using GridSearchCV
-    grid_search = GridSearchCV(model_pipeline, param_grid, cv = 5, n_jobs = -1) # 5-fold cross-validation
-    grid_search.fit(Xtrain, ytrain) # Fit the GridSearchCV to the training data
+    # Perform hyperparameter tuning using RandomizedSearchCV
+    # Increased n_iter for more extensive search, using f1_scorer
+    random_search = RandomizedSearchCV(model_pipeline, param_grid, cv = 5, n_iter=50, n_jobs = -1, scoring=f1_scorer) # Changed from GridSearchCV
+    random_search.fit(Xtrain, ytrain) # Fit the RandomizedSearchCV to the training data
 
     # Log all parameter combinations and their mean test scores to MLflow
-    results = grid_search.cv_results_
+    results = random_search.cv_results_
     for i in range(len(results['params'])):
         param_set = results['params'][i]
         mean_score = results['mean_test_score'][i]
@@ -100,11 +104,11 @@ with mlflow.start_run():
             mlflow.log_metric("mean_test_score", mean_score)
             mlflow.log_metric("std_test_score", std_score)
 
-    # Log the best parameters found by GridSearchCV to the main MLflow run
-    mlflow.log_params(grid_search.best_params_)
+    # Log the best parameters found by RandomizedSearchCV to the main MLflow run
+    mlflow.log_params(random_search.best_params_)
 
-    # Retrieve the best model estimator from the grid search
-    best_model = grid_search.best_estimator_
+    # Retrieve the best model estimator from the random search
+    best_model = random_search.best_estimator_
 
     # Define a classification threshold for converting probabilities to binary predictions
     classification_threshold = 0.45

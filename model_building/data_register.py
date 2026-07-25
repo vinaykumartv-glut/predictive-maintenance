@@ -2,9 +2,9 @@ import os
 import glob
 from huggingface_hub import HfApi
 
-#from google.colab import userdata
-#access_key = userdata.get("MY_API_KEY")
-access_key = os.getenv("HF_TOKEN")
+from google.colab import userdata
+access_key = userdata.get("MY_API_KEY")
+#access_key = os.getenv("HF_TOKEN")
 
 # Load token from environment
 api = HfApi(token = access_key)
